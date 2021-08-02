@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+/* eslint-disable no-unused-vars */
 require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
@@ -24,6 +26,10 @@ const errorHandler = (error, request, response, next) => {
     return response.status(400).send({ error: 'malformatted id' })
   }
 
+  if (error.name === 'ValidationError') {
+    return response.status(400).send(error)
+  }
+
   next(error)
 }
 
@@ -36,7 +42,7 @@ app.get('/api/persons', (req, res) => {
   })
 })
 
-app.get('/api/persons/:id', (req, res) => {
+app.get('/api/persons/:id', (req, res, next) => {
   Person.findById(req.params.id)
     .then(person => {
       if (person) {
@@ -73,14 +79,14 @@ app.delete('/api/persons/:id', (req, res, next) => {
 /*************************/
 // POST
 /*************************/
-app.post('/api/persons', (req, res) => {
+app.post('/api/persons', (req, res, next) => {
   const body = req.body
 
-  if (!body.name || !body.number) {
+  /* if (!body.name || !body.number) {
     return res.status(400).json({
       error: 'missing name or number'
     })
-  }
+  } */
 
   /* if (persons.find(person => person.name === body.name)) {
     return res.status(400).json({
@@ -93,9 +99,11 @@ app.post('/api/persons', (req, res) => {
     number: body.number,
   })
 
-  person.save().then(savedPerson => {
-    res.json(person)
-  })
+  person.save()
+    .then(savedPerson => {
+      res.json(person)
+    })
+    .catch(error => next(error))
 })
 
 /*************************/
